@@ -1,0 +1,150 @@
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
+import { GoogleLogin } from '@react-oauth/google';
+import client from '../api/client';
+
+const Register = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
+  const navigate = useNavigate();
+
+  const validate = () => {
+    const newErrors = {};
+    if (!name) newErrors.name = 'Name is required';
+    else if (name.length < 2) newErrors.name = 'Name must be at least 2 characters';
+    else if (name.length > 80) newErrors.name = 'Name must be max 80 characters';
+    if (!email) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email format';
+    if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 8) newErrors.password = 'Password must be at least 8 characters';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      await register(name, email, password);
+      toast.success('Account created!');
+      navigate('/');
+    } catch (err) {
+      if (err.response?.data?.errors) {
+        const fieldErrors = {};
+        err.response.data.errors.forEach(e => { fieldErrors[e.field] = e.message; });
+        setErrors(fieldErrors);
+      } else {
+        toast.error(err.response?.data?.message || 'Registration failed');
+      }
+    } finally { setLoading(false); }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const res = await client.post('/auth/sns/google', { providerToken: credentialResponse.credential });
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      window.location.href = '/';
+    } catch (err) { toast.error('Google login failed'); }
+  };
+
+  const inputStyle = (field) => ({
+    width: '100%', padding: '0.85rem 1rem',
+    border: `2px solid ${errors[field] ? '#dc2626' : '#e2e8f0'}`,
+    borderRadius: '10px', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box'
+  });
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <div style={{ width: '100%', maxWidth: '440px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ fontSize: '3rem' }}>⛪</div>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1a1a2e', marginBottom: '0.5rem' }}>Join Our Community</h1>
+          <p style={{ color: '#64748b' }}>Create your church community account</p>
+        </div>
+
+        <div style={{ background: 'white', borderRadius: '16px', padding: '2.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Full Name</label>
+              <input type="text" value={name} onChange={e => { setName(e.target.value); setErrors({...errors, name: ''}); }}
+                placeholder="Your name" style={inputStyle('name')}
+                onFocus={e => e.target.style.borderColor = errors.name ? '#dc2626' : '#2563eb'}
+                onBlur={e => e.target.style.borderColor = errors.name ? '#dc2626' : '#e2e8f0'} />
+              {errors.name && <p style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '0.25rem' }}>⚠️ {errors.name}</p>}
+            </div>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Email Address</label>
+              <input type="email" value={email} onChange={e => { setEmail(e.target.value); setErrors({...errors, email: ''}); }}
+                placeholder="your@email.com" style={inputStyle('email')}
+                onFocus={e => e.target.style.borderColor = errors.email ? '#dc2626' : '#2563eb'}
+                onBlur={e => e.target.style.borderColor = errors.email ? '#dc2626' : '#e2e8f0'} />
+              {errors.email && <p style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '0.25rem' }}>⚠️ {errors.email}</p>}
+            </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Password</label>
+              <input type="password" value={password} onChange={e => { setPassword(e.target.value); setErrors({...errors, password: ''}); }}
+                placeholder="Min 8 characters" style={inputStyle('password')}
+                onFocus={e => e.target.style.borderColor = errors.password ? '#dc2626' : '#2563eb'}
+                onBlur={e => e.target.style.borderColor = errors.password ? '#dc2626' : '#e2e8f0'} />
+              {errors.password && <p style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '0.25rem' }}>⚠️ {errors.password}</p>}
+            </div>
+            <button type="submit" disabled={loading} style={{
+              width: '100%', padding: '0.9rem', background: loading ? '#94a3b8' : '#2563eb', color: 'white',
+              border: 'none', borderRadius: '10px', fontSize: '1rem', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer'
+            }}>
+              {loading ? 'Creating account...' : 'Create Account'}
+            </button>
+          </form>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '1.5rem 0' }}>
+            <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+            <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>or sign up with</span>
+            <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+            <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => toast.error('Google login failed')} />
+          </div>
+
+          <button onClick={() => toast.info('Kakao login coming soon!')} style={{
+            width: '100%', padding: '0.75rem', background: '#FEE500', color: '#000000',
+            border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '0.95rem',
+            cursor: 'pointer', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+          }}>
+            <span style={{ fontSize: '1.2rem' }}>💬</span> Continue with Kakao
+          </button>
+
+          <button onClick={() => toast.info('Naver login coming soon!')} style={{
+            width: '100%', padding: '0.75rem', background: '#03C75A', color: 'white',
+            border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '0.95rem',
+            cursor: 'pointer', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+          }}>
+            <span style={{ fontSize: '1.2rem', fontWeight: '800' }}>N</span> Continue with Naver
+          </button>
+
+          <button onClick={() => toast.info('Facebook login coming soon!')} style={{
+            width: '100%', padding: '0.75rem', background: '#1877F2', color: 'white',
+            border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '0.95rem',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+          }}>
+            <span style={{ fontSize: '1.2rem' }}>f</span> Continue with Facebook
+          </button>
+
+          <p style={{ textAlign: 'center', marginTop: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
+            Already have an account? <Link to="/login" style={{ color: '#2563eb', fontWeight: '600' }}>Sign In</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Register;
