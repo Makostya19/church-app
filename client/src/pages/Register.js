@@ -114,30 +114,6 @@ const Register = () => {
             <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => toast.error('Google login failed')} />
           </div>
 
-          <button onClick={() => toast.info('Kakao login coming soon!')} style={{
-            width: '100%', padding: '0.75rem', background: '#FEE500', color: '#000000',
-            border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '0.95rem',
-            cursor: 'pointer', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-          }}>
-            <span style={{ fontSize: '1.2rem' }}>💬</span> Continue with Kakao
-          </button>
-
-          <button onClick={() => toast.info('Naver login coming soon!')} style={{
-            width: '100%', padding: '0.75rem', background: '#03C75A', color: 'white',
-            border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '0.95rem',
-            cursor: 'pointer', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-          }}>
-            <span style={{ fontSize: '1.2rem', fontWeight: '800' }}>N</span> Continue with Naver
-          </button>
-
-          <button onClick={() => toast.info('Facebook login coming soon!')} style={{
-            width: '100%', padding: '0.75rem', background: '#1877F2', color: 'white',
-            border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '0.95rem',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-          }}>
-            <span style={{ fontSize: '1.2rem' }}>f</span> Continue with Facebook
-          </button>
-
           <p style={{ textAlign: 'center', marginTop: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
             Already have an account? <Link to="/login" style={{ color: '#2563eb', fontWeight: '600' }}>Sign In</Link>
           </p>
